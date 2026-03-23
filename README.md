@@ -5,7 +5,7 @@
 
 [![DEMO](https://img.shields.io/badge/Demo-FFB300?style=for-the-badge&logo=airplayvideo&logoColor=white)](https://dr.miromind.ai/)
 [![MODELS](https://img.shields.io/badge/Models-5EDDD2?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/miromind-ai)
-[![DOCS](https://img.shields.io/badge/Docs-8CA1AF?style=for-the-badge&logo=readthedocs&logoColor=white)](https://miromindai.github.io/miroflow/)
+[![DOCS](https://img.shields.io/badge/Docs-8CA1AF?style=for-the-badge&logo=readthedocs&logoColor=white)](https://miromindai.github.io/MiroFlow/)
 [![WEBSITE](https://img.shields.io/badge/Website-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai)
 [![DISCORD](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/GPqEnkzQZd)
 [![RedNote](https://img.shields.io/badge/RedNote-FF2442?style=for-the-badge&logo=revoltdotchat&logoColor=white)](https://www.xiaohongshu.com/user/profile/663098830000000003033edc)
