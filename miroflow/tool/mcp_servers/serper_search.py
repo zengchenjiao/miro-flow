@@ -51,7 +51,7 @@ async def make_serper_request(
     payload: Dict[str, Any], headers: Dict[str, str]
 ) -> httpx.Response:
     """Make HTTP request to Serper API with retry logic."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=300.0) as client:
         response = await client.post(
             f"{SERPER_BASE_URL}/search",
             json=payload,
