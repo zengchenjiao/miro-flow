@@ -182,7 +182,7 @@ def main():
                 print(f"Selected task at index {args.task_index}")
             else:
                 print(
-                    f"Error: Task index {args.task_index} out of range (0-{len(all_tasks)-1})"
+                    f"Error: Task index {args.task_index} out of range (0-{len(all_tasks) - 1})"
                 )
                 sys.exit(1)
         elif args.task_id:

@@ -76,7 +76,9 @@ def fetch_unpredicted_questions(
         created_to = end.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     else:
         created_to = now.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-        created_from = (now - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        created_from = (now - timedelta(days=days_back)).strftime(
+            "%Y-%m-%dT%H:%M:%S.000Z"
+        )
 
     url = (
         f"{PLATFORM_BASE_URL}/api/questions/search"
@@ -106,13 +108,16 @@ def fetch_unpredicted_questions(
     # (or equivalent) as unpredicted.
     PREDICTED_STATUSES = {"predicted", "completed", "done", "finished"}
     unpredicted = [
-        q for q in questions
+        q
+        for q in questions
         if str(q.get("status", "")).lower() not in PREDICTED_STATUSES
     ]
 
     log.info(
         "Fetched %d questions, %d unpredicted (page %d)",
-        len(questions), len(unpredicted), page,
+        len(questions),
+        len(unpredicted),
+        page,
     )
     return unpredicted
 
@@ -120,6 +125,7 @@ def fetch_unpredicted_questions(
 # ---------------------------------------------------------------------------
 # Agent runner
 # ---------------------------------------------------------------------------
+
 
 def _build_agent_and_cfg(config_path: str, output_dir: str):
     """Load config and build agent. Returns (agent, cfg, model_name)."""
@@ -149,13 +155,22 @@ async def _run_prediction(agent, cfg, question: dict) -> dict:
     from miroflow.benchmark.task_runner import run_single_task
 
     q_id = str(question.get("id", uuid.uuid4()))
-    content = question.get("content") or question.get("question") or question.get("title") or ""
+    content = (
+        question.get("content")
+        or question.get("question")
+        or question.get("title")
+        or ""
+    )
 
     # 拼接选项空间
     answer_space = question.get("answer_space", "")
     if answer_space:
         try:
-            options = json.loads(answer_space) if isinstance(answer_space, str) else answer_space
+            options = (
+                json.loads(answer_space)
+                if isinstance(answer_space, str)
+                else answer_space
+            )
             options_str = "、".join(f"{k}: {v}" for k, v in options.items())
             q_text = f"{content}\n\n候选答案：{options_str}"
         except Exception:
@@ -195,7 +210,9 @@ async def _run_prediction(agent, cfg, question: dict) -> dict:
     raw_answer = result.model_boxed_answer or ""
 
     # model_response 是 AgentContext（dict子类），直接用 .get()
-    response_dict = result.model_response if isinstance(result.model_response, dict) else {}
+    response_dict = (
+        result.model_response if isinstance(result.model_response, dict) else {}
+    )
     if not response_dict and result.attempts:
         last_attempt = result.attempts[-1]
         raw = getattr(last_attempt, "model_response", {})
@@ -264,20 +281,24 @@ def _extract_tool_evidence(response_dict: dict) -> list:
                     if not url or url in seen_urls:
                         continue
                     seen_urls.add(url)
-                    evidence_list.append({
-                        "url": url,
-                        "content": item.get("snippet") or item.get("title") or "",
-                    })
+                    evidence_list.append(
+                        {
+                            "url": url,
+                            "content": item.get("snippet") or item.get("title") or "",
+                        }
+                    )
 
             # scrape_and_extract_info 结果：用完整的 extracted_info
             if data.get("success") and data.get("extracted_info") and data.get("url"):
                 url = data["url"]
                 if url not in seen_urls:
                     seen_urls.add(url)
-                    evidence_list.append({
-                        "url": url,
-                        "content": data["extracted_info"],
-                    })
+                    evidence_list.append(
+                        {
+                            "url": url,
+                            "content": data["extracted_info"],
+                        }
+                    )
                 else:
                     # 已存在则用更完整的 extracted_info 替换 snippet
                     for e in evidence_list:
@@ -312,21 +333,33 @@ def _estimate_confidence(result) -> int:
 # Output helpers
 # ---------------------------------------------------------------------------
 
+
 def submit_prediction(result: dict) -> bool:
     """提交预测结果到平台，返回是否成功。"""
     url = f"{PLATFORM_BASE_URL}/api/agent-predictions/submit"
     try:
-        resp = requests.post(url, json=result, headers=SUBMIT_HEADERS, verify=False, timeout=30)
+        resp = requests.post(
+            url, json=result, headers=SUBMIT_HEADERS, verify=False, timeout=30
+        )
         if resp.status_code in (200, 201):
-            log.info("Submitted prediction id=%s, status=%d", result.get("id"), resp.status_code)
+            log.info(
+                "Submitted prediction id=%s, status=%d",
+                result.get("id"),
+                resp.status_code,
+            )
             return True
         else:
-            log.error("Submit failed id=%s, status=%d, body=%s",
-                      result.get("id"), resp.status_code, resp.text[:200])
+            log.error(
+                "Submit failed id=%s, status=%d, body=%s",
+                result.get("id"),
+                resp.status_code,
+                resp.text[:200],
+            )
             return False
     except requests.RequestException as e:
         log.error("Submit request error id=%s: %s", result.get("id"), e)
         return False
+
 
 def save_results(results: list[dict], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -341,6 +374,7 @@ def save_results(results: list[dict], output_dir: Path) -> Path:
 # Main loop
 # ---------------------------------------------------------------------------
 
+
 def run_once(
     config_path: str,
     output_dir: str,
@@ -348,7 +382,9 @@ def run_once(
     limit: int = 0,
     exact_previous_day: bool = False,
 ) -> list[dict]:
-    questions = fetch_unpredicted_questions(days_back=days_back, exact_previous_day=exact_previous_day)
+    questions = fetch_unpredicted_questions(
+        days_back=days_back, exact_previous_day=exact_previous_day
+    )
     if not questions:
         log.info("No unpredicted questions found.")
         return []
@@ -365,7 +401,9 @@ def run_once(
     for i, q in enumerate(questions, 1):
         q_id = q.get("id", "?")
         q_text = (q.get("content") or q.get("question") or q.get("title") or "")[:80]
-        log.info("[%d/%d] Predicting question id=%s: %s...", i, len(questions), q_id, q_text)
+        log.info(
+            "[%d/%d] Predicting question id=%s: %s...", i, len(questions), q_id, q_text
+        )
         try:
             result = asyncio.run(_run_prediction(agent, cfg, q))
             results.append(result)
@@ -373,22 +411,26 @@ def run_once(
             submit_prediction(result)
         except Exception as e:
             log.error("Failed to predict question %s: %s", q_id, e)
-            results.append({
-                "id": str(q_id),
-                "question": q_text,
-                "model_name": model_name,
-                "answer": "",
-                "reason": f"Prediction failed: {e}",
-                "confidence": 0,
-                "evidence": [],
-            })
+            results.append(
+                {
+                    "id": str(q_id),
+                    "question": q_text,
+                    "model_name": model_name,
+                    "answer": "",
+                    "reason": f"Prediction failed: {e}",
+                    "confidence": 0,
+                    "evidence": [],
+                }
+            )
 
     save_results(results, Path(output_dir) / "predictions")
     return results
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Predict unpredicted platform questions")
+    parser = argparse.ArgumentParser(
+        description="Predict unpredicted platform questions"
+    )
     parser.add_argument(
         "--config",
         default="config/agent_quickstart.yaml",
@@ -446,13 +488,27 @@ def main():
         )
 
     if args.once:
-        run_once(args.config, args.output_dir, args.days_back, args.limit, args.exact_previous_day)
+        run_once(
+            args.config,
+            args.output_dir,
+            args.days_back,
+            args.limit,
+            args.exact_previous_day,
+        )
         return
 
-    log.info("Starting prediction loop (interval=%ds). Press Ctrl+C to stop.", args.interval)
+    log.info(
+        "Starting prediction loop (interval=%ds). Press Ctrl+C to stop.", args.interval
+    )
     while True:
         try:
-            run_once(args.config, args.output_dir, args.days_back, args.limit, args.exact_previous_day)
+            run_once(
+                args.config,
+                args.output_dir,
+                args.days_back,
+                args.limit,
+                args.exact_previous_day,
+            )
         except KeyboardInterrupt:
             log.info("Interrupted, exiting.")
             sys.exit(0)

@@ -32,9 +32,9 @@ class AppConfig:
         default_factory=lambda: Path(__file__).parent.parent.parent / "config"
     )
     logs_dir: Path = field(
-        default_factory=lambda: Path(__file__).parent.parent.parent
-        / "logs"
-        / "web_runs"
+        default_factory=lambda: (
+            Path(__file__).parent.parent.parent / "logs" / "web_runs"
+        )
     )
 
     # Default configuration

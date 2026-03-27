@@ -193,9 +193,9 @@ class IterativeAgentWithToolAndRollback(BaseAgent):
             turn_count += 1
 
             if self.verbose:
-                print(f"\n{'='*60}")
+                print(f"\n{'=' * 60}")
                 print(f"[Turn {turn_count}] Starting (max_turns={max_turns})")
-                print(f"{'='*60}")
+                print(f"{'=' * 60}")
 
             # LLM call (with ContextLimitError fallback)
             try:
@@ -248,7 +248,7 @@ class IterativeAgentWithToolAndRollback(BaseAgent):
                         call.get("arguments", {}), ensure_ascii=False
                     )[:150]
                     print(
-                        f"  [{i+1}] {call.get('server_name', '?')}::{call.get('tool_name', '?')} "
+                        f"  [{i + 1}] {call.get('server_name', '?')}::{call.get('tool_name', '?')} "
                         f"args={args_preview}"
                     )
 
@@ -413,13 +413,13 @@ class IterativeAgentWithToolAndRollback(BaseAgent):
         )
         if self.verbose:
             final_answer = output_processor_result.get("final_boxed_answer", None)
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(
                 f"[DONE] Total turns: {turn_count} | "
                 f"task_failed={task_failed} | reached_limit={reached_limit}"
             )
             print(f"[DONE] Final answer: {str(final_answer)[:300]}")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
         return AgentContext(
             message_history=message_history,

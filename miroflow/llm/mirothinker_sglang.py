@@ -184,7 +184,7 @@ class MiroThinkerSGLangClient(LLMClientBase):
                     if content.count(tail) >= self._SEVERE_REPEAT_THRESHOLD:
                         needs_retry = True
                         logger.debug(
-                            f"Severe repeat detected " f"(attempt {length_attempt + 1})"
+                            f"Severe repeat detected (attempt {length_attempt + 1})"
                         )
 
                 if not needs_retry or length_attempt >= self._LENGTH_RETRY_MAX:
