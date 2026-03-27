@@ -23,11 +23,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
 
-      - name: Run 7-day prediction and submit
+      - name: Run prediction
         env:
-          PLATFORM_BASE_URL: ${{ secrets.PLATFORM_BASE_URL }}
+          PLATFORM_BASE_URL: ${{ secrets.PLATFORM_BASE_URL }}   # 新增
           PLATFORM_TOKEN: ${{ secrets.PLATFORM_TOKEN }}
           SUBMIT_TOKEN: ${{ secrets.SUBMIT_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
         run: |
           python scripts/predict_questions.py \
             --config config/agent_quickstart.yaml \
