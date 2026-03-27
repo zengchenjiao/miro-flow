@@ -124,8 +124,6 @@ def fetch_unpredicted_questions(
 def _build_agent_and_cfg(config_path: str, output_dir: str):
     """Load config and build agent. Returns (agent, cfg, model_name)."""
     # Import here so the module can be imported without hydra initialised
-    import hydra
-    import omegaconf
     from config import load_config
     from miroflow.agents import build_agent_from_config
     from miroflow.logging.task_tracer import get_tracer
