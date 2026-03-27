@@ -32,4 +32,4 @@ jobs:
           python scripts/predict_questions.py \
             --config config/agent_quickstart.yaml \
             --once \
-            --exact-previous-day
+            --days-back
