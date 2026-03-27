@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import json
 import logging
+import os
 import sys
 import time
 import uuid
@@ -29,15 +30,15 @@ warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 # Platform client
 # ---------------------------------------------------------------------------
 
-PLATFORM_BASE_URL = "http://172.16.18.11:18081"
-PLATFORM_TOKEN = "Bearer sk-qkIOZIWXfdBWlVxHr0M_VB"
-SUBMIT_TOKEN = "sk-0e911a41261d90f72e65645c6534356e530364e9"
+PLATFORM_BASE_URL = os.getenv("PLATFORM_BASE_URL")
+PLATFORM_TOKEN = os.getenv("PLATFORM_TOKEN")
+SUBMIT_TOKEN = os.getenv("SUBMIT_TOKEN")
 
 HEADERS = {
     "Accept": "*/*",
     "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
     "Connection": "keep-alive",
-    "Referer": f"{PLATFORM_BASE_URL}/",
+    "Referer": f"{PLATFORM_BASE_URL}/" if PLATFORM_BASE_URL else "",
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -47,7 +48,7 @@ HEADERS = {
 }
 
 SUBMIT_HEADERS = {
-    "Authorization": f"Bearer {SUBMIT_TOKEN}",
+    "Authorization": f"Bearer {SUBMIT_TOKEN}" if SUBMIT_TOKEN else "",
     "Content-Type": "application/json",
 }
 
@@ -63,11 +64,19 @@ def fetch_unpredicted_questions(
     page: int = 1,
     page_size: int = 10000,
     days_back: int = 7,
+    exact_previous_day: bool = False,
 ) -> list[dict]:
     """Fetch questions that have not been predicted yet."""
     now = datetime.now(timezone.utc)
-    created_to = now.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-    created_from = (now - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    if exact_previous_day:
+        previous_day = (now - timedelta(days=1)).date()
+        start = datetime.combine(previous_day, datetime.min.time(), tzinfo=timezone.utc)
+        end = start + timedelta(days=1)
+        created_from = start.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        created_to = end.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    else:
+        created_to = now.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        created_from = (now - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     url = (
         f"{PLATFORM_BASE_URL}/api/questions/search"
@@ -334,8 +343,14 @@ def save_results(results: list[dict], output_dir: Path) -> Path:
 # Main loop
 # ---------------------------------------------------------------------------
 
-def run_once(config_path: str, output_dir: str, days_back: int, limit: int = 0) -> list[dict]:
-    questions = fetch_unpredicted_questions(days_back=days_back)
+def run_once(
+    config_path: str,
+    output_dir: str,
+    days_back: int,
+    limit: int = 0,
+    exact_previous_day: bool = False,
+) -> list[dict]:
+    questions = fetch_unpredicted_questions(days_back=days_back, exact_previous_day=exact_previous_day)
     if not questions:
         log.info("No unpredicted questions found.")
         return []
@@ -404,6 +419,11 @@ def main():
         help="How many days back to search for questions (default: 7)",
     )
     parser.add_argument(
+        "--exact-previous-day",
+        action="store_true",
+        help="Fetch only questions created in the previous UTC day window",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=0,
@@ -413,14 +433,28 @@ def main():
 
     dotenv.load_dotenv()
 
+    if not PLATFORM_BASE_URL or not PLATFORM_TOKEN or not SUBMIT_TOKEN:
+        missing = [
+            name
+            for name, value in {
+                "PLATFORM_BASE_URL": PLATFORM_BASE_URL,
+                "PLATFORM_TOKEN": PLATFORM_TOKEN,
+                "SUBMIT_TOKEN": SUBMIT_TOKEN,
+            }.items()
+            if not value
+        ]
+        raise RuntimeError(
+            "Missing required environment variables: " + ", ".join(missing)
+        )
+
     if args.once:
-        run_once(args.config, args.output_dir, args.days_back, args.limit)
+        run_once(args.config, args.output_dir, args.days_back, args.limit, args.exact_previous_day)
         return
 
     log.info("Starting prediction loop (interval=%ds). Press Ctrl+C to stop.", args.interval)
     while True:
         try:
-            run_once(args.config, args.output_dir, args.days_back, args.limit)
+            run_once(args.config, args.output_dir, args.days_back, args.limit, args.exact_previous_day)
         except KeyboardInterrupt:
             log.info("Interrupted, exiting.")
             sys.exit(0)
