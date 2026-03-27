@@ -28,23 +28,10 @@ jobs:
     - name: Install dependencies
       run: uv sync --extra dev
 
+    - name: Reformat code style
+      run: |
+        uv run ruff format .
+
     - name: Check static error
       run: |
         uv run ruff check --show-fixes --output-format=github
-
-    - name: Reformat code style
-      run: |
-        echo '## Reformat summary' >> $GITHUB_STEP_SUMMARY
-        if diff_output="$(uv run ruff format --diff 2>&1)"; then
-          echo "$diff_output"
-          echo '✅ Format check passed.' >> "$GITHUB_STEP_SUMMARY"
-        else
-          echo "$diff_output"
-          echo '❌ Format issues detected.' >> "$GITHUB_STEP_SUMMARY"
-          {
-            echo '```diff'
-            echo "$diff_output"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          exit 1
-        fi
